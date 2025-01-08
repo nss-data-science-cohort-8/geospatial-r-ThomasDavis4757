@@ -151,7 +151,33 @@ leaflet(bus_stops |> drop_na(longitude)) %>%
 ```
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Part 1 - Burglaries
+
+```{r}
+DC <-  st_read("../data/DC/DC.shp")
+DC
+```
+
+
+
 ```{r}
 burglaries = read.csv("../data/burglaries_2023.csv")
 burglaries
@@ -162,27 +188,15 @@ burglaries_geo <- st_as_sf(
   coords = c('longitude', 'latitude'),
   crs = st_crs(DC))
 
-burglaries_geo
-```
 
 
 
-
-
-
-
-```{r}
-DC |> 
-  ggplot() +
-  geom_sf() +
-  geom_sf(data = burglaries_geo, size = 0.1)
-```
-
-```{r}
 burg_zips <- st_join(burglaries_geo, DC, join = st_within, left = FALSE)
 burg_zips
-```
 
+
+
+```
 
 
 ```{r}
@@ -195,14 +209,79 @@ DC |>
 
 
 
+
+Part 2:
+Exploratory
+
+
+
+```{r}
+class(census)
+```
+
+```{r}
+class(burg_zips)
+```
+
+
+
 ```{r}
 census = read.csv("../data/census.csv")
 census
 
+census <- census |> 
+  mutate(
+    NAMELSAD = str_extract(`NAME`, "^Census Tract [0-9]+(?:\\.[0-9]+)?")
+  )
+
+census
+
+total <- left_join(census, burg_zips, by = 'NAMELSAD')
+
+total
 ```
 
 ```{r}
-DC <-  st_read("../data/DC/DC.shp")
-DC
+total_burgs <- total |> 
+  distinct(incident_number, .keep_all = TRUE) |> 
+  group_by(`NAMELSAD`) |> 
+  summarise(n = n()) |> 
+  arrange(desc(n)) 
+total_burgs
+```
+The census with the highest number of burglaries was Tract 160.
+
+
+```{r}
+total_burgs_1000 <- total |> 
+  distinct(incident_number, .keep_all = TRUE) |> 
+  group_by(`NAMELSAD`, `population`) |> 
+  summarise(n = n()) |> 
+  mutate(per_1000 = (n / population) * 1000) |> 
+  arrange(desc(per_1000)) 
+total_burgs_1000
+  
+```
+The census with highest burglaries per 1000 was tract 160
+
+```{r}
+total_burgs_1000_med <- total |> 
+  
+  distinct(incident_number, .keep_all = TRUE) |> 
+  group_by(`NAMELSAD`, `population`, `median_income`) |> 
+  summarise(n = n()) |> 
+  mutate(per_1000 = (n / population) * 1000) |> 
+  arrange(desc(per_1000)) 
+total_burgs_1000_med
+  
+```
+
+
+```{r}
+ggplot(total_burgs_1000_med, aes(x = per_1000, y = median_income)) + geom_point() + ylim(0,200000)
+```
+
+```{r}
+ggplot(total_burgs_1000_med, aes(x = n, y = median_income)) + geom_point() + ylim(0,200000)
 ```
 
