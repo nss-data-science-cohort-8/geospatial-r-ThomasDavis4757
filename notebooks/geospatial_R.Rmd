@@ -4,11 +4,21 @@ output: html_notebook
 ---
 
 ```{r}
-#install.packages("sf")
-#install.packages("leaflet")
+install.packages("sf")
+install.packages("leaflet")
+
 library(sf)
 library(tidyverse)
 ```
+
+
+
+```{r}
+search()
+
+library(sf)
+```
+
 
 Let's load in our zipcode dataset. This is a geojson file, which was downloaded from https://data.nashville.gov/Metro-Government/Zip-Codes/72um-tmbe. Geosjson is a standard, based on JSON, for representing geographic features.
 ```{r}
@@ -139,3 +149,60 @@ leaflet(bus_stops |> drop_na(longitude)) %>%
     clusterOptions = markerClusterOptions()
   )
 ```
+
+
+Part 1 - Burglaries
+```{r}
+burglaries = read.csv("../data/burglaries_2023.csv")
+burglaries
+
+
+burglaries_geo <- st_as_sf(
+  burglaries |> drop_na(latitude),
+  coords = c('longitude', 'latitude'),
+  crs = st_crs(DC))
+
+burglaries_geo
+```
+
+
+
+
+
+
+
+```{r}
+DC |> 
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = burglaries_geo, size = 0.1)
+```
+
+```{r}
+burg_zips <- st_join(burglaries_geo, DC, join = st_within, left = FALSE)
+burg_zips
+```
+
+
+
+```{r}
+DC |> 
+  ggplot() +
+  geom_sf() +
+  geom_sf(data = burg_zips, size = 0.1, aes(color = `NAMELSAD`)) +
+  theme(legend.position="none")
+```
+
+
+
+```{r}
+census = read.csv("../data/census.csv")
+census
+
+```
+
+```{r}
+DC <-  st_read("../data/DC/DC.shp")
+DC
+```
+
