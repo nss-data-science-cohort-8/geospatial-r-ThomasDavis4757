@@ -176,6 +176,9 @@ DC <-  st_read("../data/DC/DC.shp")
 DC
 ```
 
+```{r}
+DC
+```
 
 
 ```{r}
